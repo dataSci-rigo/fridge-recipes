@@ -1,0 +1,92 @@
+# Canonical ingredient names treated as "nearly always on hand" -- missing
+# these barely dents a recipe's rank score (see core/rank.py MISSING_PANTRY_PENALTY).
+# Canonical names must match what core/normalize.py produces (lowercase, singular).
+- salt
+- black pepper
+- pepper
+- white pepper
+- sugar
+- brown sugar
+- powdered sugar
+- flour
+- all purpose flour
+- baking powder
+- baking soda
+- yeast
+- cornstarch
+- vegetable oil
+- olive oil
+- canola oil
+- vegetable shortening
+- cooking spray
+- butter
+- water
+- ice
+- ice water
+- vinegar
+- white vinegar
+- apple cider vinegar
+- balsamic vinegar
+- rice vinegar
+- soy sauce
+- worcestershire sauce
+- hot sauce
+- ketchup
+- mustard
+- dijon mustard
+- mayonnaise
+- honey
+- maple syrup
+- vanilla extract
+- almond extract
+- garlic powder
+- onion powder
+- paprika
+- smoked paprika
+- cumin
+- chili powder
+- cayenne pepper
+- red pepper flake
+- crushed red pepper
+- oregano
+- basil
+- dried basil
+- thyme
+- dried thyme
+- rosemary
+- bay leaf
+- cinnamon
+- nutmeg
+- ginger
+- ground ginger
+- allspice
+- clove
+- cardamom
+- coriander
+- turmeric
+- curry powder
+- italian seasoning
+- garlic salt
+- onion salt
+- msg
+- cocoa powder
+- baking chocolate
+- cornmeal
+- bread crumb
+- panko
+- oat
+- rice
+- pasta
+- broth
+- chicken broth
+- beef broth
+- vegetable broth
+- stock
+- bouillon
+- gelatin
+- cream of tartar
+- sesame oil
+- peanut oil
+- coconut oil
+- lard
+- shortening

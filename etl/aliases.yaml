@@ -1,0 +1,103 @@
+# Maps a parsed/canonicalized ingredient name to the preferred canonical name.
+# Grows over time as ETL runs surface new near-duplicates; keys should already
+# be lowercase+singular (i.e. post-normalize.py output), since this table is
+# applied as the last step of canonicalization.
+scallion: green onion
+spring onion: green onion
+green onions: green onion
+cilantro: cilantro
+coriander leaf: cilantro
+fresh coriander: cilantro
+chili: chile
+chilli: chile
+chile pepper: chile
+red chile: chile
+bell pepper: bell pepper
+capsicum: bell pepper
+aubergine: eggplant
+courgette: zucchini
+garbanzo bean: chickpea
+garbanzo: chickpea
+ceci bean: chickpea
+scallop: scallop
+prawn: shrimp
+king prawn: shrimp
+tomato paste: tomato paste
+tomato purée: tomato paste
+tomato puree: tomato paste
+passata: tomato puree
+confectioner sugar: powdered sugar
+confectioners sugar: powdered sugar
+icing sugar: powdered sugar
+caster sugar: sugar
+superfine sugar: sugar
+granulated sugar: sugar
+self rising flour: self-rising flour
+plain flour: all purpose flour
+all-purpose flour: all purpose flour
+ap flour: all purpose flour
+corn starch: cornstarch
+bicarbonate of soda: baking soda
+bicarb of soda: baking soda
+double cream: heavy cream
+heavy whipping cream: heavy cream
+whipping cream: heavy cream
+half and half: half and half
+single cream: light cream
+green bell pepper: bell pepper
+red bell pepper: bell pepper
+yellow bell pepper: bell pepper
+sweet pepper: bell pepper
+yukon gold potato: potato
+russet potato: potato
+red potato: potato
+white potato: potato
+sweet potato: sweet potato
+yam: sweet potato
+spring onion white part: green onion
+red onion: red onion
+white onion: onion
+yellow onion: onion
+brown onion: onion
+sweet onion: onion
+extra virgin olive oil: olive oil
+evoo: olive oil
+kosher salt: salt
+sea salt: salt
+table salt: salt
+fine sea salt: salt
+freshly ground black pepper: black pepper
+ground black pepper: black pepper
+cracked black pepper: black pepper
+parmesan cheese: parmesan
+parmigiano reggiano: parmesan
+parmesan reggiano cheese: parmesan
+mozzarella cheese: mozzarella
+cheddar cheese: cheddar
+chicken breast: chicken breast
+boneless skinless chicken breast: chicken breast
+boneless chicken breast: chicken breast
+chicken thigh: chicken thighs
+boneless skinless chicken thigh: chicken thighs
+ground beef: ground beef
+lean ground beef: ground beef
+minced beef: ground beef
+beef mince: ground beef
+ground turkey: ground turkey
+turkey mince: ground turkey
+egg: egg
+large egg: egg
+eggs: egg
+lemon juice: lemon juice
+fresh lemon juice: lemon juice
+lime juice: lime juice
+fresh lime juice: lime juice
+salt black pepper: salt
+salt and pepper: salt
+salt pepper: salt
+salt freshly ground black pepper: salt
+free-range egg: egg
+free range egg: egg
+large free-range egg: egg
+unsalted butter: butter
+salted butter: butter

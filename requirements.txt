@@ -1,0 +1,9 @@
+duckdb
+python-dotenv
+apscheduler
+pillow
+jinja2
+pyyaml
+inflect
+ingredient-parser-nlp
+requests

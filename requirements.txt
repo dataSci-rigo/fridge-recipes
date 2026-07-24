@@ -7,3 +7,4 @@ pyyaml
 inflect
 ingredient-parser-nlp
 requests
+faiss-cpu

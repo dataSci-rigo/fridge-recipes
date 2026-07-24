@@ -1,0 +1,41 @@
+[project]
+name = "fridge-recipes"
+version = "0.1.0"
+description = "Fridge-search recipe system: search, rank, and track recipes against what's in your fridge."
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb",
+    "python-dotenv",
+    "apscheduler",
+    "pillow",
+    "jinja2",
+    "pyyaml",
+    "inflect",
+    "ingredient-parser-nlp",
+    "requests",
+    "faiss-cpu",
+]
+
+# No standalone Telegram bot: fridge_handlers.py runs as a router inside
+# food/hub.py's aiogram Dispatcher (single poller, single token), not as its
+# own process -- see the integration plan. Bot deps live in food/requirements.txt.
+#
+# faiss-cpu is a base dep because core/recommend.py needs it at query time
+# (in food/hub.py's process). sentence-transformers/torch are NOT a base dep
+# -- only etl/embed_recipes.py needs them, run manually/locally to produce
+# data/recipe_embeddings.faiss, never on the live bot.
+
+[project.optional-dependencies]
+web = ["fastapi", "uvicorn"]
+embed = ["sentence-transformers"]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["core*", "etl*", "bot*", "web*"]

@@ -4,3 +4,5 @@ logs/
 __pycache__/
 *.pyc
 __pycache__
+*.egg-info
+fridge-recipe-system-plan.md

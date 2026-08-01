@@ -7,11 +7,14 @@ for a given inventory, before handing off to rank_recipes for scoring.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from core.config import RECIPES_DB_PATH
 from core.db import connect
 from core.models import Recipe, RecipeIngredient
+
+_FTS_TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
 
 # Recipes sharing >=1 ingredient with a common pantry-adjacent item (salt,
 # egg, butter, ...) can number in the tens of thousands; cap the candidate
@@ -77,6 +80,32 @@ def load_candidate_recipes(
             )
         )
     return recipes
+
+
+def find_by_title(
+    query: str, db_path: Path = RECIPES_DB_PATH, limit: int = 8
+) -> list[dict]:
+    """FTS5 title/ingredients search, e.g. for "what do I need to make X"
+    lookups or an explicit /find <query> command -- distinct from
+    load_candidate_recipes, which ranks against current inventory rather
+    than searching by name. Tokens are stripped down to bare alphanumerics
+    before querying since FTS5's query syntax treats punctuation specially
+    (quotes, colons, etc.) and free-text user input isn't guaranteed clean.
+    """
+    tokens = _FTS_TOKEN_RE.findall(query)
+    if not tokens:
+        return []
+    fts_query = " ".join(tokens)
+    conn = connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT rowid, title FROM recipes_fts WHERE recipes_fts MATCH ? "
+            "ORDER BY rank LIMIT ?",
+            (fts_query, limit),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [{"id": rowid, "title": title} for rowid, title in rows]
 
 
 def get_recipe(recipe_id: int, db_path: Path = RECIPES_DB_PATH) -> dict | None:

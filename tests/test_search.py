@@ -1,5 +1,5 @@
 from core import db
-from core.search import find_by_title, get_recipe, load_candidate_recipes
+from core.search import find_by_title, get_recipe, load_candidate_recipes, search_recipes
 
 
 def _make_db(tmp_path):
@@ -10,19 +10,22 @@ def _make_db(tmp_path):
         """
         INSERT INTO ingredients (canonical_name, pantry) VALUES
             ('chicken breast', 0), ('lemon', 0), ('salt', 1),
-            ('chickpea', 0), ('tahini', 0);
-        INSERT INTO recipes (id, title, directions, active_min, total_min, equipment)
-            VALUES (1, 'Lemon Chicken', 'cook it', 20, 40, 'stovetop'),
-                   (2, 'Classic Hummus', 'blend it', 10, 10, 'no_cook'),
-                   (3, 'Smoky Hummus', 'blend it smoky', 15, 15, 'no_cook');
+            ('chickpea', 0), ('tahini', 0), ('flour', 0), ('sugar', 0);
+        INSERT INTO recipes (id, title, directions, active_min, total_min, equipment, category)
+            VALUES (1, 'Lemon Chicken', 'cook it', 20, 40, 'stovetop', NULL),
+                   (2, 'Classic Hummus', 'blend it', 10, 10, 'no_cook', 'appetizer'),
+                   (3, 'Smoky Hummus', 'blend it smoky', 15, 60, 'no_cook', 'appetizer'),
+                   (4, 'Sugar Cookies', 'bake it', 20, 35, 'oven', 'dessert');
         INSERT INTO recipe_ingredients (recipe_id, canonical_ingredient, quantity_text)
             VALUES (1, 'chicken breast', '1 lb'), (1, 'lemon', '1'), (1, 'salt', 'to taste'),
                    (2, 'chickpea', '1 can'), (2, 'tahini', '2 tbsp'),
-                   (3, 'chickpea', '1 can'), (3, 'tahini', '3 tbsp');
+                   (3, 'chickpea', '1 can'), (3, 'tahini', '3 tbsp'),
+                   (4, 'flour', '2 cups'), (4, 'sugar', '1 cup');
         INSERT INTO recipes_fts (rowid, title, ingredients_text) VALUES
             (1, 'Lemon Chicken', 'chicken breast lemon salt'),
             (2, 'Classic Hummus', 'chickpea tahini'),
-            (3, 'Smoky Hummus', 'chickpea tahini');
+            (3, 'Smoky Hummus', 'chickpea tahini'),
+            (4, 'Sugar Cookies', 'flour sugar');
         """
     )
     conn.commit()
@@ -93,3 +96,50 @@ def test_find_by_title_sanitizes_punctuation(tmp_path):
 def test_find_by_title_empty_query(tmp_path):
     path = _make_db(tmp_path)
     assert find_by_title("???", db_path=path) == []
+
+
+def test_search_recipes_by_category(tmp_path):
+    path = _make_db(tmp_path)
+    matches = search_recipes(category="appetizer", db_path=path)
+    assert {m["title"] for m in matches} == {"Classic Hummus", "Smoky Hummus"}
+
+
+def test_search_recipes_by_max_total_min(tmp_path):
+    path = _make_db(tmp_path)
+    matches = search_recipes(category="appetizer", max_total_min=30, db_path=path)
+    assert {m["title"] for m in matches} == {"Classic Hummus"}
+
+
+def test_search_recipes_by_max_active_min(tmp_path):
+    path = _make_db(tmp_path)
+    matches = search_recipes(max_active_min=15, db_path=path)
+    assert {m["title"] for m in matches} == {"Classic Hummus", "Smoky Hummus"}
+
+
+def test_search_recipes_by_ingredients_requires_all(tmp_path):
+    path = _make_db(tmp_path)
+    matches = search_recipes(ingredients={"chickpea", "tahini"}, db_path=path)
+    assert {m["title"] for m in matches} == {"Classic Hummus", "Smoky Hummus"}
+
+    matches_missing_one = search_recipes(
+        ingredients={"chickpea", "tahini", "lemon"}, db_path=path
+    )
+    assert matches_missing_one == []
+
+
+def test_search_recipes_combined_filters(tmp_path):
+    path = _make_db(tmp_path)
+    matches = search_recipes(
+        query="hummus",
+        category="appetizer",
+        max_total_min=30,
+        ingredients={"chickpea"},
+        db_path=path,
+    )
+    assert {m["title"] for m in matches} == {"Classic Hummus"}
+
+
+def test_search_recipes_no_filters_returns_all_up_to_limit(tmp_path):
+    path = _make_db(tmp_path)
+    matches = search_recipes(db_path=path, limit=2)
+    assert len(matches) == 2

@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS recipes (
     active_min INTEGER,
     total_min INTEGER,
     time_confidence TEXT,
-    equipment TEXT
+    equipment TEXT,
+    category TEXT
 );
 
 CREATE TABLE IF NOT EXISTS recipe_ingredients (
@@ -115,15 +116,35 @@ CREATE TABLE IF NOT EXISTS search_prefs (
 -- open-recipe-data corpus (replaces food/food.db's dead `recipes` table --
 -- same shape, now actually wired to a bot command). `liked` is nullable:
 -- NULL = no opinion yet, 1 = liked, 0 = disliked.
+-- `alternatives_json`: per-ingredient substitute lists discovered at ingest
+-- time (e.g. "butter, or margarine"). `promoted_recipe_id`: set once
+-- etl/promote_custom_recipes.py (laptop, heavy processing) has folded this
+-- into the main recipes.db corpus with real nutrition/embeddings -- NULL
+-- means it still only lives here and is live-merged into /cook and /find.
 CREATE TABLE IF NOT EXISTS custom_recipes (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE COLLATE NOCASE,
     user_input TEXT,
     ingredients_json TEXT,
+    alternatives_json TEXT,
     directions TEXT,
     total_nutrition_json TEXT,
     liked INTEGER,
+    promoted_recipe_id INTEGER,
     saved_at TEXT NOT NULL
+);
+
+-- Ingredient substitution pairs. Grows from a curated seed
+-- (etl/substitutions.yaml), alternatives discovered during recipe ingestion,
+-- and cached answers from core/substitutions.py's live Claude fallback.
+-- Undirected: (a, b) means a and b are interchangeable, check both ways.
+CREATE TABLE IF NOT EXISTS substitutions (
+    id INTEGER PRIMARY KEY,
+    canonical_a TEXT NOT NULL,
+    canonical_b TEXT NOT NULL,
+    source TEXT NOT NULL CHECK (source IN ('seed', 'ingested', 'claude')),
+    created_at TEXT NOT NULL,
+    UNIQUE (canonical_a, canonical_b)
 );
 
 -- One row per "I actually cooked this" event, whether the recipe came from
@@ -149,11 +170,22 @@ def connect(path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _add_column_if_missing(conn: sqlite3.Connection, table: str, column: str, decl: str) -> None:
+    """ALTER TABLE ADD COLUMN, ignored if it already exists -- lets schema
+    additions land on a DB that already has real data without a full rebuild
+    (mirrors food/db.py's migration pattern)."""
+    try:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+    except sqlite3.OperationalError:
+        pass
+
+
 def init_recipes_db(path: Path = RECIPES_DB_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(path)
     try:
         conn.executescript(RECIPES_SCHEMA)
+        _add_column_if_missing(conn, "recipes", "category", "TEXT")
         conn.commit()
     finally:
         conn.close()
@@ -164,6 +196,8 @@ def init_app_db(path: Path = APP_DB_PATH) -> None:
     conn = connect(path)
     try:
         conn.executescript(APP_SCHEMA)
+        _add_column_if_missing(conn, "custom_recipes", "alternatives_json", "TEXT")
+        _add_column_if_missing(conn, "custom_recipes", "promoted_recipe_id", "INTEGER")
         conn.commit()
     finally:
         conn.close()

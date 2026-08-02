@@ -163,3 +163,57 @@ def test_exclude_ingredients_filter():
         filters=RankFilters(exclude_ingredients=frozenset({"heavy cream"})),
     )
     assert results == []
+
+
+BUTTERMILK = RecipeIngredient("buttermilk")
+
+
+def _milk_for_buttermilk(name: str) -> set[str]:
+    return {"milk"} if name == "buttermilk" else set()
+
+
+def test_substitution_covers_a_missing_ingredient():
+    recipe = Recipe(
+        id=1,
+        title="Buttermilk Chicken",
+        ingredients=(CHICKEN, BUTTERMILK),
+        active_min=20,
+        total_min=40,
+    )
+    inv = make_inventory() + [InventoryItem("milk", state="fresh")]
+
+    results = rank_recipes([recipe], inv, get_substitutes_fn=_milk_for_buttermilk)
+
+    assert len(results) == 1
+    assert results[0].missing == set()  # covered via substitution, not "missing"
+    assert "milk instead of buttermilk" in results[0].explanation
+
+
+def test_substitution_scores_lower_than_a_direct_match():
+    direct = Recipe(
+        id=1, title="Milk Chicken",
+        ingredients=(CHICKEN, RecipeIngredient("milk")),
+        active_min=10, total_min=10,
+    )
+    needs_sub = Recipe(
+        id=2, title="Buttermilk Chicken",
+        ingredients=(CHICKEN, BUTTERMILK),
+        active_min=10, total_min=10,
+    )
+    inv = make_inventory() + [InventoryItem("milk", state="fresh")]
+
+    results = rank_recipes([direct, needs_sub], inv, get_substitutes_fn=_milk_for_buttermilk)
+    scores = {r.recipe.id: r.score for r in results}
+    assert scores[1] > scores[2]
+
+
+def test_without_substitutes_fn_ingredient_stays_missing():
+    recipe = Recipe(
+        id=1,
+        title="Buttermilk Chicken",
+        ingredients=(CHICKEN, BUTTERMILK),
+        active_min=20,
+        total_min=40,
+    )
+    results = rank_recipes([recipe], make_inventory())
+    assert results[0].missing == {"buttermilk"}

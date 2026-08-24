@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Search — Fridge Recipes{% endblock %}
+{% block content %}
+<h1>Find a recipe</h1>
+<p class="sub">{{ inventory_count }} item{{ "s" if inventory_count != 1 }} in your fridge
+· <a href="{{ prefix }}/add">add your own recipe</a></p>
+
+<form method="get" action="{{ prefix }}/search" class="search-form" autocomplete="off">
+  <div class="field">
+    <span>name</span>
+    <input type="text" name="q" value="{{ q }}" placeholder="hummus, pancakes…">
+  </div>
+  <div class="field">
+    <span>type</span>
+    <select name="category">
+      <option value="">any</option>
+      {% for c in ["breakfast","beverage","dessert","bread","soup","salad",
+                   "appetizer","sauce_or_condiment","side_dish"] %}
+      <option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c.replace("_"," ") }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <span>cuisine</span>
+    <select name="cuisine">
+      <option value="">any</option>
+      {% for c, _img in cuisine_tiles %}
+      <option value="{{ c }}" {% if cuisine == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <span>max cal (est)</span>
+    <input type="number" name="max_cal" value="{{ max_cal }}" min="1" style="width:90px">
+  </div>
+  <div class="field">
+    <span>active &lt; min</span>
+    <input type="number" name="max_active" value="{{ max_active }}" min="1" style="width:90px">
+  </div>
+  <div class="field">
+    <span>total &lt; min</span>
+    <input type="number" name="max_total" value="{{ max_total }}" min="1" style="width:90px">
+  </div>
+  <div class="field ac-wrap" style="min-width:220px">
+    <span>must use (comma-separated)</span>
+    <input type="text" id="has-input" name="has" value="{{ has }}" data-append="1"
+           hx-get="/api/ingredients/autocomplete?target=has-input"
+           hx-trigger="input changed delay:250ms" hx-target="#has-input-ac"
+           hx-vals='js:{q: document.getElementById("has-input").value.split(",").pop().trim()}'>
+    <div class="ac-results" id="has-input-ac"></div>
+  </div>
+  <button class="primary">Search</button>
+</form>
+
+<form method="get" action="{{ prefix }}/search" class="btn-row">
+  <input type="hidden" name="cook" value="1">
+  <button class="primary">🍳 What can I make right now?</button>
+</form>
+
+{% if results is none %}
+<h2>Cuisines</h2>
+<div class="tile-grid">
+  {% for c, img in cuisine_tiles %}
+  <a class="tile" href="{{ prefix }}/search?cuisine={{ c }}">
+    <img src="/img/ingredient/{{ img }}" loading="lazy" alt="">
+    <span>{{ c }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>Flavors</h2>
+<div class="tile-grid">
+  {% for f, img in flavor_tiles %}
+  <a class="tile" href="{{ prefix }}/search?flavor={{ f }}">
+    <img src="/img/ingredient/{{ img }}" loading="lazy" alt="">
+    <span>{{ f }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>Type</h2>
+<div class="tile-grid">
+  {% for c, img in category_tiles %}
+  <a class="tile" href="{{ prefix }}/search?category={{ c }}">
+    <img src="/img/ingredient/{{ img }}" loading="lazy" alt="">
+    <span>{{ c.replace("_"," ") }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>Time &amp; calories</h2>
+<div class="tile-grid">
+  {% for label, minutes, emoji in time_tiles %}
+  <a class="tile tile-emoji" href="{{ prefix }}/search?max_total={{ minutes }}">
+    <span class="emoji">{{ emoji }}</span><span>under {{ label }}</span>
+  </a>
+  {% endfor %}
+  {% for label, cal, emoji in calorie_tiles %}
+  <a class="tile tile-emoji" href="{{ prefix }}/search?max_cal={{ cal }}">
+    <span class="emoji">{{ emoji }}</span><span>{{ label }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if results is not none %}
+  {% if not results %}
+  <div class="notice">No matches{% if cook %} — your fridge may be empty;
+    <a href="{{ prefix }}/setup">set it up</a> first{% endif %}.</div>
+  {% else %}
+  <h2>{% if cook %}Top picks from your fridge{% else %}Results{% endif %}</h2>
+  <div class="card-grid">
+    {% for r in results %}
+    <a class="recipe-card" href="{{ prefix }}/recipe/{{ r.ref }}">
+      {% if r.has_image %}<img src="/img/recipe/{{ r.ref }}" loading="lazy" alt="">{% endif %}
+      <div class="body">
+        <div class="title">{{ r.title }}</div>
+        <div class="meta">
+          #{{ r.ref }}
+          {% if r.active_min %} · {{ r.active_min }}m active{% endif %}
+          {% if r.total_min %} · {{ r.total_min }}m total{% endif %}
+        </div>
+        {% if r.explanation %}<div class="meta">{{ r.explanation }}</div>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

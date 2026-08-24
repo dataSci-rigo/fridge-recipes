@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Not found — Fridge Recipes{% endblock %}
+{% block content %}
+<h1>No recipe #{{ ref }}</h1>
+<p class="sub">That id doesn't exist{% if mode == "demo" %} (custom recipes aren't
+visible in demo mode){% endif %}. <a href="{{ prefix }}/search">Back to search</a>.</p>
+{% endblock %}

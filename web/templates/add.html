@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Add your own — Fridge Recipes{% endblock %}
+{% block content %}
+<h1>Add your own recipe</h1>
+<p class="sub">Paste a recipe, or upload a photo / screenshot — Claude reads it and
+saves it so it shows up in search and the Telegram bot alike.</p>
+
+{% if mode == "demo" %}
+<div class="notice">Demo mode: extraction runs, but nothing is saved.</div>
+{% endif %}
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+{% if extracted %}
+<div class="notice">
+  {% if saved_ref %}Saved <strong>{{ extracted.title }}</strong> as
+    <a href="{{ prefix }}/recipe/{{ saved_ref }}">#{{ saved_ref }}</a>.
+  {% else %}Read <strong>{{ extracted.title }}</strong>:{% endif %}
+  <ul class="ing-list">
+    {% for ing in extracted.ingredients %}
+    <li><span>{% if ing.quantity_text %}{{ ing.quantity_text }} {% endif %}{{ ing.canonical_guess }}
+      {% if ing.alternatives %}<span class="pager">(or {{ ing.alternatives|join(", ") }})</span>{% endif %}
+    </span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="post" action="{{ prefix }}/add" enctype="multipart/form-data">
+  <div class="field">
+    <span>paste recipe text</span>
+    <textarea name="text" placeholder="Grandma's Pancakes&#10;2 cups flour&#10;1 egg&#10;..."></textarea>
+  </div>
+  <div class="btn-row">
+    <div class="field">
+      <span>or photo / screenshot</span>
+      <input type="file" name="photo" accept="image/*">
+    </div>
+    <button class="primary">Extract{% if mode != "demo" %} &amp; save{% endif %}</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Setup — Fridge Recipes{% endblock %}
+{% block content %}
+<h1>Set up your fridge &amp; pantry</h1>
+<p class="sub">Tick what you have. {{ selected_count }}/{{ total_count }} selected
+· page {{ page }} of {{ pages }}</p>
+
+<form method="post" action="{{ prefix }}/setup">
+  <input type="hidden" name="page" value="{{ page }}">
+
+  <div class="btn-row">
+    <button name="action" value="select_all">Select all</button>
+    <button name="action" value="unselect_all">Unselect all</button>
+    <span style="flex:1"></span>
+    <button name="action" value="skip" title="Select everything and finish">Skip</button>
+    <button name="action" value="done" class="primary">Done</button>
+  </div>
+
+  <div class="item-grid">
+    {% for item in items %}
+    <div class="item-card">
+      <input type="hidden" name="page_item" value="{{ item.name }}">
+      <input type="checkbox" id="it-{{ loop.index }}" name="item"
+             value="{{ item.name }}" {% if item.selected %}checked{% endif %}>
+      <label for="it-{{ loop.index }}">
+        <img src="/img/ingredient/{{ item.name }}" loading="lazy" alt="">
+        <span>{{ item.name }}</span>
+        <span class="loc">{{ item.location }}</span>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="btn-row">
+    {% if page > 1 %}<button name="action" value="prev">← Back</button>{% endif %}
+    {% if page < pages %}<button name="action" value="next">Next →</button>{% endif %}
+    <span class="pager">page {{ page }}/{{ pages }}</span>
+  </div>
+</form>
+{% endblock %}

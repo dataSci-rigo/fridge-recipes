@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My fridge — Fridge Recipes{% endblock %}
+{% block content %}
+<h1>Does this look right?</h1>
+<p class="sub">Remove anything you don't actually have — then start searching.</p>
+
+<div class="btn-row">
+  <a class="btn primary" href="{{ prefix }}/search">Looks good → search recipes</a>
+</div>
+
+{% if not inventory %}
+<div class="notice">Nothing in your fridge yet.
+  <a href="{{ prefix }}/setup">Run setup</a> or add an item below.</div>
+{% else %}
+<ul class="review-list">
+  {% for item in inventory %}
+  <li>
+    <img src="/img/ingredient/{{ item.canonical_ingredient }}" loading="lazy" alt="">
+    <span>{{ item.canonical_ingredient }}
+      {% if item.qty_text %}<span class="pager">({{ item.qty_text }})</span>{% endif %}
+    </span>
+    <span class="pager">{{ item.location }}</span>
+    <form method="post" action="{{ prefix }}/review/remove">
+      <input type="hidden" name="name" value="{{ item.canonical_ingredient }}">
+      <button class="danger" title="Remove">✕</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2>Add an item</h2>
+<form method="post" action="{{ prefix }}/inventory/add" class="search-form" autocomplete="off">
+  <div class="field ac-wrap">
+    <span>ingredient</span>
+    <input type="text" id="inv-name" name="name" required
+           hx-get="/api/ingredients/autocomplete?target=inv-name"
+           hx-trigger="input changed delay:250ms" hx-target="#inv-name-ac"
+           hx-vals='js:{q: document.getElementById("inv-name").value}'>
+    <div class="ac-results" id="inv-name-ac"></div>
+  </div>
+  <div class="field">
+    <span>location</span>
+    <select name="location"><option>fridge</option><option>pantry</option></select>
+  </div>
+  <input type="hidden" name="back" value="review">
+  <button class="primary">Add</button>
+</form>
+
+<div class="btn-row">
+  <a class="btn primary" href="{{ prefix }}/search">Looks good → search recipes</a>
+</div>
+{% endblock %}

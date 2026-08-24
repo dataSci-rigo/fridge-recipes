@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ r.title }} — Fridge Recipes{% endblock %}
+{% block content %}
+<h1>{{ r.title }}</h1>
+<p class="sub">#{{ r.ref }}
+  {% if r.category %} · {{ r.category.replace("_"," ") }}{% endif %}
+  {% if r.cuisine %} · {{ r.cuisine }}{% endif %}
+  {% if r.active_min %} · {{ r.active_min }}m active{% endif %}
+  {% if r.total_min %} · {{ r.total_min }}m total{% endif %}
+  {% if r.calories_est %} · ≈{{ r.calories_est }} cal total{% endif %}
+  {% if missing %} · missing {{ missing|length }}{% else %} · you have everything ✓{% endif %}
+</p>
+
+{% if r.source == "corpus" %}
+<img class="hero-img" src="/img/recipe/{{ r.id }}" loading="lazy" alt="">
+{% endif %}
+
+<h2>Ingredients</h2>
+<ul class="ing-list">
+  {% for ing in r.ingredients %}
+  <li>
+    {% if show_thumbs %}
+    <img src="/img/ingredient/{{ ing.name }}" loading="lazy" alt="">
+    {% endif %}
+    <span class="{{ 'have-yes' if ing.have else 'have-no' }}">{{ "✓" if ing.have else "✗" }}</span>
+    <span>{{ ing.name }}
+      {% if ing.quantity_text %}<span class="pager">({{ ing.quantity_text }})</span>{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+
+{% if r.directions %}
+<h2>Directions</h2>
+<div class="directions">{{ r.directions }}</div>
+{% endif %}
+{% endblock %}

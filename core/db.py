@@ -26,7 +26,11 @@ CREATE TABLE IF NOT EXISTS recipes (
     total_min INTEGER,
     time_confidence TEXT,
     equipment TEXT,
-    category TEXT
+    category TEXT,
+    cuisine TEXT,
+    calories_est INTEGER,
+    image_url TEXT,
+    image_cached_path TEXT
 );
 
 CREATE TABLE IF NOT EXISTS recipe_ingredients (
@@ -49,6 +53,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS recipes_fts USING fts5(title, ingredients_tex
 -- back here so we never re-hit a rate-limited API for the same ingredient.
 -- No FK to ingredients(canonical_name): nutrition can be looked up for
 -- freeform/bot-added items that aren't in the recipe corpus at all.
+-- Cached ingredient photos (Wikimedia Commons lookups by core/images.py).
+-- Lives in recipes.db, not app.db: like nutrition it's static reference data
+-- keyed by canonical name, not per-user state. local_path = 'unavailable'
+-- marks a permanent miss (no usable Commons result / dead download) so we
+-- never re-query the API for the same name on every page view.
+CREATE TABLE IF NOT EXISTS ingredient_images (
+    canonical_name TEXT PRIMARY KEY,
+    image_url TEXT,
+    local_path TEXT,
+    source TEXT,
+    fetched_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS ingredient_nutrition (
     canonical_name TEXT PRIMARY KEY,
     cal_per_100g REAL,
@@ -147,6 +164,25 @@ CREATE TABLE IF NOT EXISTS substitutions (
     UNIQUE (canonical_a, canonical_b)
 );
 
+-- Web demo mode: a synthetic fridge/pantry per browser session, keyed by a
+-- cookie-set session id. Demo interactions NEVER touch the real inventory
+-- table; stale sessions are swept lazily (see web/demo.py).
+CREATE TABLE IF NOT EXISTS demo_sessions (
+    session_id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    last_seen_at TEXT NOT NULL,
+    setup_done INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS demo_inventory (
+    session_id TEXT NOT NULL REFERENCES demo_sessions(session_id) ON DELETE CASCADE,
+    canonical_ingredient TEXT NOT NULL,
+    location TEXT NOT NULL CHECK (location IN ('fridge', 'pantry')),
+    selected INTEGER NOT NULL DEFAULT 0,
+    committed INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (session_id, canonical_ingredient)
+);
+
 -- One row per "I actually cooked this" event, whether the recipe came from
 -- the corpus (recipe_id) or was homemade (custom_recipe_id) -- replaces
 -- food/food.db's dead `recipes.total_json` purpose of tracking calories for
@@ -186,6 +222,10 @@ def init_recipes_db(path: Path = RECIPES_DB_PATH) -> None:
     try:
         conn.executescript(RECIPES_SCHEMA)
         _add_column_if_missing(conn, "recipes", "category", "TEXT")
+        _add_column_if_missing(conn, "recipes", "cuisine", "TEXT")
+        _add_column_if_missing(conn, "recipes", "calories_est", "INTEGER")
+        _add_column_if_missing(conn, "recipes", "image_url", "TEXT")
+        _add_column_if_missing(conn, "recipes", "image_cached_path", "TEXT")
         conn.commit()
     finally:
         conn.close()

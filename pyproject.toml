@@ -26,7 +26,7 @@ dependencies = [
 # data/recipe_embeddings.faiss, never on the live bot.
 
 [project.optional-dependencies]
-web = ["fastapi", "uvicorn"]
+web = ["fastapi", "uvicorn", "python-multipart"]
 embed = ["sentence-transformers"]
 dev = ["pytest"]
 

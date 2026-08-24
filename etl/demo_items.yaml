@@ -1,0 +1,84 @@
+# Demo-mode starter fridge/pantry: the items the /demo setup wizard offers.
+# Canonical names must match what core/normalize.py produces (lowercase,
+# singular) so demo inventories rank against the corpus exactly like real
+# ones. `location` uses the inventory location vocabulary (fridge/pantry).
+fridge:
+  - egg
+  - milk
+  - butter
+  - cheddar
+  - parmesan
+  - mozzarella
+  - cream cheese
+  - sour cream
+  - greek yogurt
+  - heavy cream
+  - chicken breast
+  - beef
+  - bacon
+  - ham
+  - salmon
+  - shrimp
+  - tofu
+  - carrot
+  - celery
+  - broccoli
+  - spinach
+  - lettuce
+  - tomato
+  - cucumber
+  - bell pepper
+  - mushroom
+  - zucchini
+  - green onion
+  - cilantro
+  - parsley
+  - lemon
+  - lime
+  - orange juice
+  - tortilla
+pantry:
+  - salt
+  - black pepper
+  - sugar
+  - brown sugar
+  - all purpose flour
+  - baking powder
+  - baking soda
+  - olive oil
+  - vegetable oil
+  - vinegar
+  - soy sauce
+  - salsa
+  - ketchup
+  - mustard
+  - mayonnaise
+  - honey
+  - vanilla extract
+  - rice
+  - pasta
+  - spaghetti
+  - bread
+  - oat
+  - peanut butter
+  - jam
+  - canned tomato
+  - tomato paste
+  - chicken broth
+  - black bean
+  - chickpea
+  - onion
+  - garlic
+  - potato
+  - sweet potato
+  - ginger
+  - cumin
+  - paprika
+  - chili powder
+  - oregano
+  - basil
+  - cinnamon
+  - walnut
+  - almond
+  - raisin
+  - chocolate chip

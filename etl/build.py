@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import html
 import json
 import re
 import sys
@@ -21,7 +22,9 @@ from pathlib import Path
 from core import db
 from core.config import RECIPES_DB_PATH
 from core.normalize import ParsedLine, is_pantry, parse_ingredient_line
+from etl.cuisine_rules import tag_cuisine
 from etl.equipment_rules import extract_equipment
+from etl.type_rules import tag_category
 
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 
@@ -52,6 +55,7 @@ class RawRecipe:
     description: str
     prep_min: int | None
     cook_min: int | None
+    image_url: str | None
 
 
 def load_openrecipes(path: Path, limit: int | None = None):
@@ -66,7 +70,9 @@ def load_openrecipes(path: Path, limit: int | None = None):
                 doc = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            title = (doc.get("name") or "").strip()
+            # Source data carries HTML entities ("Beets &amp; Greens") that
+            # would double-escape in any HTML renderer -- store real text.
+            title = html.unescape((doc.get("name") or "").strip())
             ingredients_text = doc.get("ingredients") or ""
             raw_lines = [l.strip() for l in ingredients_text.split("\n") if l.strip()]
             if not title or len(raw_lines) < 2:
@@ -75,9 +81,10 @@ def load_openrecipes(path: Path, limit: int | None = None):
                 source_id=str(doc.get("_id", {}).get("$oid", i)),
                 title=title,
                 raw_ingredient_lines=raw_lines,
-                description=doc.get("description") or "",
+                description=html.unescape(doc.get("description") or ""),
                 prep_min=parse_iso_duration_minutes(doc.get("prepTime")),
                 cook_min=parse_iso_duration_minutes(doc.get("cookTime")),
+                image_url=(doc.get("image") or "").strip() or None,
             )
 
 
@@ -146,7 +153,8 @@ def build(source: str, limit: int | None, out_path: Path, workers: int) -> None:
 
         conn.execute(
             "INSERT INTO recipes (id, title, directions, active_min, total_min, "
-            "time_confidence, equipment) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "time_confidence, equipment, category, cuisine, image_url) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 recipe_id,
                 raw.title,
@@ -155,6 +163,9 @@ def build(source: str, limit: int | None, out_path: Path, workers: int) -> None:
                 total_min,
                 time_confidence,
                 ",".join(sorted(equipment)),
+                tag_category(raw.title),
+                tag_cuisine(raw.title),
+                raw.image_url,
             ),
         )
         for name, qty_text, qty, unit in canonical_lines:

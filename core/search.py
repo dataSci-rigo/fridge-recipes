@@ -102,19 +102,40 @@ def search_recipes(
     max_active_min: int | None = None,
     max_total_min: int | None = None,
     category: str | None = None,
+    cuisine: str | None = None,
+    max_calories: int | None = None,
+    any_ingredients: set[str] | None = None,
     limit: int = 8,
     db_path: Path = RECIPES_DB_PATH,
 ) -> list[dict]:
-    """Unified filtered search across name, category, time budget, and
-    required ingredients -- powers /find's structured grammar and the
-    "find" intent's widened natural-language extraction. `find_by_title`
-    stays as a thin query-only wrapper for backward compatibility."""
+    """Unified filtered search across name, category, cuisine, time budget,
+    calorie budget, and ingredients -- powers /find's structured grammar,
+    the "find" intent's widened natural-language extraction, and the web
+    app's browse buttons. `ingredients` requires ALL names to appear;
+    `any_ingredients` requires at least one (used for flavor buttons, e.g.
+    spicy = chili OR jalapeno OR ...). `max_calories` compares against the
+    rough whole-recipe estimate from etl/estimate_calories.py (NULL
+    estimates are excluded). `find_by_title` stays as a thin query-only
+    wrapper for backward compatibility."""
     conditions: list[str] = []
     params: list = []
 
     if category:
         conditions.append("r.category = ?")
         params.append(category)
+    if cuisine:
+        conditions.append("r.cuisine = ?")
+        params.append(cuisine)
+    if max_calories is not None:
+        conditions.append("r.calories_est IS NOT NULL AND r.calories_est <= ?")
+        params.append(max_calories)
+    if any_ingredients:
+        placeholders = ",".join("?" * len(any_ingredients))
+        conditions.append(
+            f"r.id IN (SELECT recipe_id FROM recipe_ingredients "
+            f"WHERE canonical_ingredient IN ({placeholders}))"
+        )
+        params.extend(any_ingredients)
     if max_active_min is not None:
         conditions.append("r.active_min IS NOT NULL AND r.active_min <= ?")
         params.append(max_active_min)
@@ -162,8 +183,8 @@ def get_recipe(recipe_id: int, db_path: Path = RECIPES_DB_PATH) -> dict | None:
     conn = connect(db_path)
     try:
         row = conn.execute(
-            "SELECT id, title, directions, active_min, total_min, equipment "
-            "FROM recipes WHERE id = ?",
+            "SELECT id, title, directions, active_min, total_min, equipment, "
+            "category, cuisine, calories_est FROM recipes WHERE id = ?",
             (recipe_id,),
         ).fetchone()
         if row is None:
@@ -176,7 +197,7 @@ def get_recipe(recipe_id: int, db_path: Path = RECIPES_DB_PATH) -> dict | None:
     finally:
         conn.close()
 
-    rid, title, directions, active_min, total_min, equipment = row
+    rid, title, directions, active_min, total_min, equipment, category, cuisine, calories_est = row
     return {
         "id": rid,
         "title": title,
@@ -184,5 +205,8 @@ def get_recipe(recipe_id: int, db_path: Path = RECIPES_DB_PATH) -> dict | None:
         "active_min": active_min,
         "total_min": total_min,
         "equipment": equipment.split(",") if equipment else [],
+        "category": category,
+        "cuisine": cuisine,
+        "calories_est": calories_est,
         "ingredients": [{"name": n, "quantity_text": q} for n, q in ing_rows],
     }

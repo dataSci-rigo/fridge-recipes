@@ -22,10 +22,10 @@ from pathlib import Path
 
 import requests
 
-from core.config import IMAGES_DIR, RECIPES_DB_PATH
+from core.config import CONTACT_EMAIL, IMAGES_DIR, RECIPES_DB_PATH
 from core.db import connect
 
-USER_AGENT = "fridge-recipes/1.0 (personal recipe app; rlunaorozco@berkeley.edu)"
+USER_AGENT = "fridge-recipes/1.0 (personal recipe app" + (f"; {CONTACT_EMAIL}" if CONTACT_EMAIL else "") + ")"
 FETCH_TIMEOUT = 10
 UNAVAILABLE = "unavailable"
 

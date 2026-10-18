@@ -16,6 +16,9 @@ APP_DB_PATH = Path(os.environ.get("FRIDGE_APP_DB", DATA_DIR / "app.db"))
 IMAGES_DIR = Path(os.environ.get("FRIDGE_IMAGES_DIR", DATA_DIR / "images"))
 
 TELEGRAM_TOKEN = os.environ.get("FRIDGE_TELEGRAM_TOKEN")
+# Contact address sent in the User-Agent when fetching recipe images (APIs ask
+# for one). Lives in .env only — the repo is public.
+CONTACT_EMAIL = os.environ.get("FRIDGE_CONTACT_EMAIL", "").strip()
 ALLOWED_USER_ID = os.environ.get("FRIDGE_ALLOWED_USER_ID")
 
 # Web app (Phase 5). Personal-mode routes require these via HTTP Basic Auth;
